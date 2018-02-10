@@ -1,9 +1,8 @@
 # Import libraries
-import requests
-from bs4 import BeautifulSoup
 import telegram
 import logging
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+import functions
 
 # Initiate logging module
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',level=logging.INFO)
@@ -17,58 +16,48 @@ bot = telegram.Bot(token=tokenId)
 updater = Updater(token=tokenId)
 dispatcher = updater.dispatcher 
 
-# Function to get html source code
-def getSource(coin):
-	url = 'https://coinmarketcap.com/currencies/' + coin + '/'
-	page = requests.get(url)
-	if(page.status_code == 404):
-		return False
+# Initializing a dictionary of coin exchanges pairs
+coin_to_exchanges = dict()
+
+# Initialize a dict of dictionaries for database
+database = dict()
+
+# Function to update database
+def updateDB(bot, update):
+	bot.send_message(chat_id=update.message.chat_id, text='Updating database...')
+	functions.updateDB(database)
+	bot.send_message(chat_id=update.message.chat_id, text='Update complete!')
+updateDB_handler = CommandHandler('updateDB', updateDB)
+dispatcher.add_handler(updateDB_handler)
+
+
+# Creating an exchange command to find all exchanges that trades this coin
+def exchange(bot, update, args):
+	# To do: count length of message, instead of sending multiple messages just combine all in 1. 
+
+	print()
+
+	if(len(args) != 1):
+		bot.send_message(chat_id=update.message.chat_id, text='Too few / many arguments! Please enter only 1 ticker.')
 	else:
-		return BeautifulSoup(page.content, 'html.parser')
-	
-# Function to get list of exchanges 
-def getExchange(coin):
-	soup = getSource(coin)
-	if(soup != False):
-		body = list(soup.find('table', id='markets-table').children)[3]
-		i = 1
-		rows = list(body.children)
-		while(i < len(rows)):
-			
-			exchange = (list(rows[i])[3]).get_text()
-			print(str(i) + " " + exchange)
-			i = i + 2
+		# Getting the id equivalent (full name delimited with '-') of the target coin
+		coin = args[0].upper()
+		if(coin in database):
+			id = database[coin].get('id')
+			exchanges = functions.getExchange(id, coin_to_exchanges)
+			if(exchanges):
+				print("Printing exchanges...")
+				for i in exchanges:
 
-		
-		#print(list(list(test.children)[3].children)[0].get_text())
-	else:
-		#instead of printing error, i should just initialize body to sth
-		print("error")
+					############################## I think it's timing out cause i'm sending too many messages to the server
+					bot.send_message(chat_id=update.message.chat_id, text=i)
+		else:
+			print(args[0] + " not found!")
+			bot.send_message(chat_id=update.message.chat_id, text=args[0] + " cannot be found in DB, please run the updateDB command or check that you've entered a valid ticker.")
 
-	
-	
-	#i = 1;
-	#while(i < len(list(body.children))):
-	# https://stackoverflow.com/questions/3817529/syntax-for-creating-a-dictionary-into-another-dictionary-in-python
+exchange_handler = CommandHandler('exchange', exchange, pass_args=True)
+dispatcher.add_handler(exchange_handler)
 
-getExchange('Cindicator')
-
-# function to remove duplicates
-# https://stackoverflow.com/questions/7961363/removing-duplicates-in-lists
-
-# id="markets-table" class="table no-border table-condensed dataTable no-footer"
-
-# # Creating an exchange command to find all exchanges that trades this coin
-# def exchange(bot, update, args):
-# 	listOfExchanges = ....
-# 	bot.send_message(chat_id=update.message.chat_id, text=text_caps)
-
-# exchange_handler = CommandHandler('exchange', exchange, pass_args=True)
-# dispatcher.add_handler(exchange_handler)
-
-
-
-
-########## future features ############
-# Every X mins update dict (use ticker instead of full name) 
-# store somewhere if coin found b4, no need to repeat query unless each coin has a flag to determine when it should rerun query.
+# Start the bot
+print('starting bot!')
+updater.start_polling(clean=True)
