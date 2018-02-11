@@ -104,10 +104,8 @@ def concatExchanges(exchanges):
 
 # Function to update an existing list of exchanges for the given coin
 def updateExchange(coin, coin_to_exchanges):
-	if(not checkCoin(coin, coin_to_exchanges)):
-		print("Updating exchange data for " + coin)
-		# Not the most efficient but it works.
-		updateCoin(coin, coin_to_exchanges)
+	print("Updating exchange data for " + coin)
+	# Not the most efficient but it works.
+	updateCoin(coin, coin_to_exchanges)
 
 
-	

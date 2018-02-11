@@ -5,6 +5,12 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import functions
 from random import randint
 
+# if __name__ == "__main__":
+# 	main()
+
+# # Main code
+# def main():
+
 # Initiate logging module
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',level=logging.INFO)
 
@@ -101,4 +107,6 @@ updater.start_polling(clean=True)
 # Add description to commands
 # Send hyperlink instead of just name, use name as text in a href
 # Add volume
+## 2 coins w/ same ticker fail, see knc
+
 # and the actual acccumulation part lol
