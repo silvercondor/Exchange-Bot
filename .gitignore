@@ -36,6 +36,11 @@
 ehthumbs.db
 Thumbs.db
 
+# Byte-compiled / optimized / DLL files #
+#########################################
+__pycache__/
+*.py[cod]
+
 # Confidential files #
 ######################
 token.txt
