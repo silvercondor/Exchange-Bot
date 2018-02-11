@@ -71,12 +71,42 @@ def getExchange(coin, coin_to_exchanges):
 			return False
 	else:
 		return coin_to_exchanges[coin]
-		
+
+# Function to concatenate a list of exchanges into multiple strings max character length of 4096
+def concatExchanges(exchanges):
+
+	## Based on what I tested, bitcoin (which should be listed on the most exchanges) do not even have that many exchanges that will require a second string of 4096 characters so the entire code below is not necessary for now.
+	# i = 0
+	# j = 0
+	# list_of_exchanges = list(exchanges)
+	# numExchanges = len(list_of_exchanges)
+	# exchanges_to_string = []
+	# numStrings = 0
+	# lenString = 0
+	# maxLength = 4096
+
+	# while(j < numExchanges):
+	# 	if(lenString < maxLength ):
+	# 		lenString = lenString + len(list_of_exchanges[j]) + 2 # 2 is for the newline 
+	# 		j += 1
+	# 	else:
+	# 		exchanges_to_string.append('\n'.join(list_of_exchanges[i:j]))
+	# 		lenString = 0
+	# 		numStrings += 1
+	# 		i = j
+
+	# # To catch the leftover exchanges
+	# if(numStrings == 0):
+	# 	exchanges_to_string.append('\n'.join(list_of_exchanges[i:j]))
+	# return exchanges_to_string
+
+	return '\n'.join(list(exchanges))
+
 # Function to update an existing list of exchanges for the given coin
-# This function doesn't have a handler yet.
 def updateExchange(coin, coin_to_exchanges):
 	if(not checkCoin(coin, coin_to_exchanges)):
 		print("Updating exchange data for " + coin)
+		# Not the most efficient but it works.
 		updateCoin(coin, coin_to_exchanges)
 
 
