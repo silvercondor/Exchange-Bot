@@ -1,5 +1,15 @@
 import requests, json
+import datetime
 from bs4 import BeautifulSoup
+from random import randint
+import math
+
+# Initializing a dictionary of coin exchanges pairs
+coin_to_exchanges = dict()
+
+# Initialize a dict of dictionaries for database
+database = dict()
+
 
 # Function to process CMC's api to retrieve the name of coin based on symbol provided
 def updateDB(database):
@@ -23,9 +33,23 @@ def checkCoin(coin, coin_to_exchanges):
 	return False
 
 # Function to get html source code for coin
-def getSource(coin):
+def getSource(type, *args):
 	print("In getSource function")
-	url = 'https://coinmarketcap.com/currencies/' + coin + '/'
+	if(type == 'exchange'):
+
+		# URL for getting exchange details
+		url = 'https://coinmarketcap.com/currencies/' + args[0] + '/'
+	elif(type == 'history'):
+
+		# Getting the date today and delta
+		today = datetime.datetime.now()
+		delta = datetime.timedelta(days=int(args[1]))
+
+		# URL for getting historical data
+		url = 'https://coinmarketcap.com/currencies/' + args[0] + '/historical-data/?start=' + (today - delta).strftime('%Y%m%d') + '&end=' + today.strftime('%Y%m%d')
+	else:
+		return False
+
 	page = requests.get(url)
 	if(page.status_code == 404):
 		print("Source code not found")
@@ -38,7 +62,7 @@ def getSource(coin):
 def updateCoin(coin, coin_to_exchanges):
 	print("In updateCoin function")
 	# Get source code
-	soup = getSource(coin)
+	soup = getSource('exchange', coin)
 
 	# Process source code to get unique list of exchanges for coin
 	if(soup != False):
@@ -55,7 +79,7 @@ def updateCoin(coin, coin_to_exchanges):
 		coin_to_exchanges[coin] = exchanges
 		print(coin + " updated!")
 	else:
-		print("Error retrieving Source Code")
+		print("Error updating " + coin + "!")
 
 
 # Function to get list of exchanges for the given coin
@@ -103,9 +127,127 @@ def concatExchanges(exchanges):
 	return '\n'.join(list(exchanges))
 
 # Function to update an existing list of exchanges for the given coin
-def updateExchange(coin, coin_to_exchanges):
+def update(coin, coin_to_exchanges):
 	print("Updating exchange data for " + coin)
 	# Not the most efficient but it works.
 	updateCoin(coin, coin_to_exchanges)
 
+# Function to analyse if a coin is getting pumped
+def analyse(*args):
+	print("In analyse function")
 
+	# Get source code
+	soup = getSource('history', args[0], args[1])
+	
+	if(soup != False):
+		body = list(soup.select('div#historical-data table.table')[0].children)[3]
+		rows = list(body.children)
+		i = len(rows) - 2
+		accumulationFactor = 0
+
+		while(i - 2 > 0):
+			# 3 = open, 9 = closed, 11 = volume
+			row_a = list(rows[i])
+			open_a = int(row_a[3].get_text())
+			close_a = int(row_a[9].get_text())
+			vol_a = int(row_a[11].get_text().replace(',',''))
+
+			row_b = list(rows[i-2])
+			open_b = int(row_b[3].get_text())
+			close_b = int(row_b[9].get_text())
+			vol_b = int(row_b[11].get_text().replace(',',''))
+
+
+
+			i = i - 2
+
+
+		while(i < len(rows)):
+			
+			row = list(rows[i])
+			vol = int(row[11].get_text().replace(',',''))
+			print(vol)
+			sum += vol
+			i = i + 2
+
+		print("Sum is " + str(sum)) 
+		
+
+		print(args[1])
+	else:
+		print("Analysis failed. Please check that you've entered the correct parameters.")
+
+##################################
+### Telegram Wrapper Functions ###
+##################################
+
+# Command to update database
+def updateDBWrapper(bot, update):
+	bot.send_message(chat_id=update.message.chat_id, text='Updating database...')
+	updateDB(database)
+	bot.send_message(chat_id=update.message.chat_id, text='Update complete!')
+
+
+# Command to find all exchanges that trades this coin
+def exchangeWrapper(bot, update, args):
+	print()
+	if(len(args) != 1):
+		bot.send_message(chat_id=update.message.chat_id, text='Too few / many arguments! Please enter only 1 ticker.', reply_to_message_id=update.message.message_id)
+	else:
+		# Getting the id equivalent (full name delimited with '-') of the target coin
+		coin = args[0].upper()
+		if(coin in database):
+			id = database[coin].get('id')
+			exchanges = getExchange(id, coin_to_exchanges)
+			if(exchanges):
+				print("Printing exchanges...")
+
+				# list_of_exchanges is a list of concatenated exchanges into strings with a maximum length of 4096 characters, see comments in the concatExchange Function as to why this isn't necessary for now.
+				# list_of_exchanges = []
+				
+				list_of_exchanges = concatExchanges(exchanges)
+				bot.send_message(chat_id=update.message.chat_id, text=list_of_exchanges, reply_to_message_id=update.message.message_id)
+				#for i in list_of_exchanges:
+					#bot.send_message(chat_id=update.message.chat_id, text=i, reply_to_message_id=update.message.message_id)
+		else:
+			print(args[0] + " not found!")
+			bot.send_message(chat_id=update.message.chat_id, text=args[0] + " cannot be found in DB, please run the updateDB command or check that you've entered .", reply_to_message_id=update.message.message_id)
+
+# Command to update list of exchanges that trades this coin
+def updateWrapper(bot, update, args):
+	print()
+	if(len(args) != 1):
+		bot.send_message(chat_id=update.message.chat_id, text='Too few / many arguments! Please enter only 1 ticker.', reply_to_message_id=update.message.message_id)
+	else:
+		# Getting the id equivalent (full name delimited with '-') of the target coin
+		coin = args[0].upper()
+		if(coin in database):
+			id = database[coin].get('id')
+			update(id, coin_to_exchanges)
+			bot.send_message(chat_id=update.message.chat_id, text="Exchanges for " + args[0] + " are updated!", reply_to_message_id=update.message.message_id)
+		else:
+			print(args[0] + " not found!")
+			bot.send_message(chat_id=update.message.chat_id, text=args[0] + " cannot be found in DB, please run the updateDB command or check that you've entered valid parameters.", reply_to_message_id=update.message.message_id)
+
+# Command to handle unregistered commands
+def unknownWrapper(bot, update):
+	replies = ["Stop trolling my bot Brian!", "Jon! Do you not understand the meaning of stop?!", "Invalid command...", "Please try again later even though it'll probably still not work lol.", "404 Error: Command not found!"]
+	bot.send_message(chat_id=update.message.chat_id, text=replies[randint(0,4)], reply_to_message_id=update.message.message_id)
+
+# Command to analyse if a coin is getting pumped
+def analyseWrapper(bot, update, args):
+	print()
+	if(len(args) != 2):
+			bot.send_message(chat_id=update.message.chat_id, text='Too few / many arguments! Please enter 1 ticker followed by number of days e.g. /analyse CND 7', reply_to_message_id=update.message.message_id)
+	else:
+		# Getting the id equivalent (full name delimited with '-') of the target coin
+		coin = args[0].upper()
+		day = round(float(args[1]))
+		if(coin in database and day > 0): 
+			id = database[coin].get('id')
+			accumulationFactor = analyse(id, day)
+			bot.send_message(chat_id=update.message.chat_id, text=accumulationFactor, reply_to_message_id=update.message.message_id)
+				
+		else:
+			print("Invalid parameters or updateDB not run!")
+			bot.send_message(chat_id=update.message.chat_id, text=args[0] + " cannot be found in DB, please run the updateDB command or check that you've entered valid parameters.", reply_to_message_id=update.message.message_id)
