@@ -10,8 +10,9 @@ def main():
 	# Initiate logging module
 	logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',level=logging.INFO)
 
-	# Retrieve token from external file
-	f = open('/Users/simon/Documents/Github/Accumulation Tracker/token.txt', 'r')
+	# Retrieve token from external file, enter the location of token.txt
+	# Token.txt should only contain 1 line which is the api token of your bot.
+	f = open('/Users/simon/Documents/Github/Exchange Bot/token.txt', 'r')
 	tokenId = f.readline()
 
 	# Create bot object and its corresponding updater and dispatcher

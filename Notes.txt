@@ -1,0 +1,16 @@
+Notes for Accumulation Tracker 
+
+Information scrapped from CMC:
+1. Open Price
+2. Close Price
+3. High Price
+4. Low Price
+5. 24h Vol
+
+In the purest definition, an accumulation = increase in volume with minimal change in price. 
+
+Accumulation factor = % delta vol / % delta price? 
+
+Might have some issues when you have negative delta for price and positive delta for volume unless we assume that both ways can be considered accumulation aka we absolute the final result. 
+
+Should it be a rolling demand factor? Idk. 
