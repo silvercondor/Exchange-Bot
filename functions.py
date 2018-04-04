@@ -126,12 +126,6 @@ def concatExchanges(exchanges):
 
 	return '\n'.join(list(exchanges))
 
-# Function to update an existing list of exchanges for the given coin
-def update(coin, coin_to_exchanges):
-	print("Updating exchange data for " + coin)
-	# Not the most efficient but it works.
-	updateCoin(coin, coin_to_exchanges)
-
 # Function to analyse if a coin is getting pumped
 def analyse(*args):
 	print("In analyse function")
@@ -223,7 +217,11 @@ def updateWrapper(bot, update, args):
 		coin = args[0].upper()
 		if(coin in database):
 			id = database[coin].get('id')
-			update(id, coin_to_exchanges)
+
+			print("Updating exchange data for " + coin)
+			# Not the most efficient but it works.
+			updateCoin(id, coin_to_exchanges)
+			
 			bot.send_message(chat_id=update.message.chat_id, text="Exchanges for " + args[0] + " are updated!", reply_to_message_id=update.message.message_id)
 		else:
 			print(args[0] + " not found!")
