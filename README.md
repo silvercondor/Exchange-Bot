@@ -20,12 +20,11 @@ Goal: To determine which exchange you can buy a coin from.
 - To update the cached results, run the updateExchange command.
 
 #### Issues to be fixed
-- [ ] Determine how to handle coins with the same ticker, try KNC.
+- [X] Determine how to handle coins with the same ticker, try KNC.
 
 #### Upcoming Features
 - [ ] Add description to my commands when typing /command in Telegram
-- [ ] Hyperlink to the exchange instead of just listing out which exchanges
-- [ ] Sorting exchanges by volume and what the trade volume is for that exchange
+- [X] Sorting exchanges by volume and what the trade volume is for that exchange
 - [ ] Determining the difference between the coins listed on 2 exchanges
 
 #### Additional Functionality 
