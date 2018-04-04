@@ -1,10 +1,8 @@
-import requests, json
-import datetime
+import requests, json, datetime, math, operator, re
 from bs4 import BeautifulSoup
 from random import randint
-import math
 
-# Initializing a dictionary of coin exchanges pairs
+# Initializing a dictionary of coin (dictionary of exchange vol pairs) pairs
 coin_to_exchanges = dict()
 
 # Initialize a dict of dictionaries for database
@@ -21,7 +19,9 @@ def updateDB(database):
 
 	# Convert list of dict into dict of dict
 	for i in response:
-		database[i.get('symbol')] = i
+		ticker = i.get('symbol')
+		if(ticker not in database):
+			database[ticker] = i
 	print("Update complete!")
 
 # Function to check if coin exists in coin_to_exchanges dictionary
@@ -70,12 +70,29 @@ def updateCoin(coin, coin_to_exchanges):
 		i = 1
 		rows = list(body.children)
 
-		# Using sets instead of 
-		exchanges = set()
+		# Using a dictionary to store exchanges
+		exchanges = dict()
 		while(i < len(rows)):
-			exchange = (list(rows[i])[3]).get_text()
-			exchanges.add(exchange)
+			exchange = (list(list(rows[i])[3].children)[0]).get_text()
+
+			# Remove $ and commas for volume and convert to int
+			vol = int(re.sub("[^\d\.]", "", (list(list(rows[i])[7].children)[1]).get_text()))
+			
+			# Checks to see if the dictionary already contains this exchange
+			if exchange not in exchanges:
+				exchanges[exchange] = vol
+			else:
+				exchanges[exchange] = exchanges[exchange] + vol
 			i = i + 2
+
+		# Sort exchanges based on total volume
+		exchanges = sorted(exchanges.items(), key = operator.itemgetter(1), reverse = True)
+
+		# Replace list of tuple with list of string
+		i = 0
+		while(i < len(exchanges)):
+			exchanges[i] = exchanges[i][0] + ": " + '${:,}'.format(exchanges[i][1])
+			i = i + 1
 		coin_to_exchanges[coin] = exchanges
 		print(coin + " updated!")
 	else:
@@ -84,6 +101,7 @@ def updateCoin(coin, coin_to_exchanges):
 
 # Function to get list of exchanges for the given coin
 def getExchange(coin, coin_to_exchanges):
+	
 	# If coin_to_exchanges doesn't contain coin, add it in. 
 	if(not checkCoin(coin,coin_to_exchanges)):
 		print("Processing exchange data for " + coin)
@@ -124,7 +142,11 @@ def concatExchanges(exchanges):
 	# 	exchanges_to_string.append('\n'.join(list_of_exchanges[i:j]))
 	# return exchanges_to_string
 
-	return '\n'.join(list(exchanges))
+
+	# Keeping only the first n exchanges where n is >= 0 and < 15
+	if(len(exchanges) > 15):
+		exchanges = exchanges[:15]
+	return ' | '.join(exchanges)
 
 # Function to analyse if a coin is getting pumped
 def analyse(*args):
@@ -151,10 +173,7 @@ def analyse(*args):
 			close_b = int(row_b[9].get_text())
 			vol_b = int(row_b[11].get_text().replace(',',''))
 
-
-
 			i = i - 2
-
 
 		while(i < len(rows)):
 			
@@ -249,3 +268,4 @@ def analyseWrapper(bot, update, args):
 		else:
 			print("Invalid parameters or updateDB not run!")
 			bot.send_message(chat_id=update.message.chat_id, text=args[0] + " cannot be found in DB, please run the updateDB command or check that you've entered valid parameters.", reply_to_message_id=update.message.message_id)
+
