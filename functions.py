@@ -1,4 +1,4 @@
-import requests, json, datetime, math, operator, re
+import requests, json, datetime, math, re
 from bs4 import BeautifulSoup
 from random import randint
 
@@ -80,19 +80,21 @@ def updateCoin(coin, coin_to_exchanges):
 			
 			# Checks to see if the dictionary already contains this exchange
 			if exchange not in exchanges:
-				exchanges[exchange] = vol
+				
+				# Retrieve URL for pairing with highest volume
+				url = list(list(rows[i])[5].children)[0]['href']
+				exchanges[exchange] = (vol, url)
+
 			else:
-				exchanges[exchange] = exchanges[exchange] + vol
+				vol = exchanges[exchange][0] + vol
+				url = exchanges[exchange][1]
+
+				exchanges[exchange] = (vol, url)
+
 			i = i + 2
 
 		# Sort exchanges based on total volume
-		exchanges = sorted(exchanges.items(), key = operator.itemgetter(1), reverse = True)
-
-		# Replace list of tuple with list of string
-		i = 0
-		while(i < len(exchanges)):
-			exchanges[i] = exchanges[i][0] + ": " + '${:,}'.format(exchanges[i][1])
-			i = i + 1
+		exchanges = sorted(exchanges.items(), key = lambda x:x[1][0], reverse = True)
 		coin_to_exchanges[coin] = exchanges
 		print(coin + " updated!")
 	else:
@@ -216,15 +218,20 @@ def exchangeWrapper(bot, update, args):
 				print("Printing exchanges...")
 
 				# list_of_exchanges is a list of concatenated exchanges into strings with a maximum length of 4096 characters, see comments in the concatExchange Function as to why this isn't necessary for now.
-				# list_of_exchanges = []
-				
-				list_of_exchanges = concatExchanges(exchanges)
-				bot.send_message(chat_id=update.message.chat_id, text=list_of_exchanges, reply_to_message_id=update.message.message_id)
+				list_of_exchanges = []
+			
+				for exchange in exchanges:
+					name = exchange[0]
+					vol = '${:,}'.format(exchange[1][0])
+					url = exchange[1][1]
+					list_of_exchanges.append("[" + name + "](" + url + "): " + vol)
+
+				bot.send_message(chat_id=update.message.chat_id, text=concatExchanges(list_of_exchanges), parse_mode = 'Markdown', reply_to_message_id=update.message.message_id)
 				#for i in list_of_exchanges:
 					#bot.send_message(chat_id=update.message.chat_id, text=i, reply_to_message_id=update.message.message_id)
 		else:
 			print(args[0] + " not found!")
-			bot.send_message(chat_id=update.message.chat_id, text=args[0] + " cannot be found in DB, please run the updateDB command or check that you've entered .", reply_to_message_id=update.message.message_id)
+			bot.send_message(chat_id=update.message.chat_id, text=args[0] + " cannot be found in DB, please check that you've entered a valid ticker.", reply_to_message_id=update.message.message_id)
 
 # Command to update list of exchanges that trades this coin
 def updateWrapper(bot, update, args):
@@ -238,13 +245,24 @@ def updateWrapper(bot, update, args):
 			id = database[coin].get('id')
 
 			print("Updating exchange data for " + coin)
+			print(id)
 			# Not the most efficient but it works.
 			updateCoin(id, coin_to_exchanges)
 			
-			bot.send_message(chat_id=update.message.chat_id, text="Exchanges for " + args[0] + " are updated!", reply_to_message_id=update.message.message_id)
+			bot.send_message(chat_id=update.message.chat_id, text="Exchanges and 24h rolling trade volume for " + args[0] + " are updated!", reply_to_message_id=update.message.message_id)
 		else:
 			print(args[0] + " not found!")
-			bot.send_message(chat_id=update.message.chat_id, text=args[0] + " cannot be found in DB, please run the updateDB command or check that you've entered valid parameters.", reply_to_message_id=update.message.message_id)
+			bot.send_message(chat_id=update.message.chat_id, text=args[0] + " cannot be found in DB, please check that you've entered a valid ticker.", reply_to_message_id=update.message.message_id)
+
+# Command to update all coins in cache
+def updateCacheWrapper(bot, update):
+	print()
+	for coin in coin_to_exchanges:
+		updateCoin(coin, coin_to_exchanges)
+		
+	print("cached coins updated")
+	bot.send_message(chat_id=update.message.chat_id, text="Exchanges and vol for all coins have been updated!", reply_to_message_id=update.message.message_id)
+
 
 # Command to handle unregistered commands
 def unknownWrapper(bot, update):

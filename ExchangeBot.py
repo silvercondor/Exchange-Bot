@@ -24,12 +24,14 @@ def main():
 	updateDB_handler = CommandHandler('updateDB', functions.updateDBWrapper)
 	exchange_handler = CommandHandler('exchange', functions.exchangeWrapper, pass_args=True)
 	update_handler = CommandHandler('update', functions.updateWrapper, pass_args=True)
+	updateCache_handler = CommandHandler('updateCache', functions.updateCacheWrapper)
 	# unknown_handler = MessageHandler(Filters.command, functions.unknownWrapper)
 	
 	# Adding the handlers to the dispatcher
 	dispatcher.add_handler(updateDB_handler)
 	dispatcher.add_handler(exchange_handler)
 	dispatcher.add_handler(update_handler)
+	dispatcher.add_handler(updateCache_handler)
 	# dispatcher.add_handler(unknown_handler)
 
 	# WIP functions  
