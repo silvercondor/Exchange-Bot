@@ -145,10 +145,11 @@ def concatExchanges(exchanges):
 	# return exchanges_to_string
 
 
-	# Keeping only the first n exchanges where n is >= 0 and < 15
-	if(len(exchanges) > 15):
-		exchanges = exchanges[:15]
-	return ' | '.join(exchanges)
+	# Keeping only the first n exchanges where n is >= 1 and < 16
+	# The first index is the column header
+	if(len(exchanges) > 16):
+		exchanges = exchanges[:16]
+	return '\n'.join(exchanges)
 
 # Function to analyse if a coin is getting pumped
 def analyse(*args):
@@ -218,20 +219,20 @@ def exchangeWrapper(bot, update, args):
 				print("Printing exchanges...")
 
 				# list_of_exchanges is a list of concatenated exchanges into strings with a maximum length of 4096 characters, see comments in the concatExchange Function as to why this isn't necessary for now.
-				list_of_exchanges = []
-			
+				list_of_exchanges = ["Exchange | Volume"]
+
 				for exchange in exchanges:
 					name = exchange[0]
 					vol = '${:,}'.format(exchange[1][0])
 					url = exchange[1][1]
-					list_of_exchanges.append("[" + name + "](" + url + "): " + vol)
-
-				bot.send_message(chat_id=update.message.chat_id, text=concatExchanges(list_of_exchanges), parse_mode = 'Markdown', reply_to_message_id=update.message.message_id)
+					list_of_exchanges.append("[" + name + "](" + url + ") | " + vol)
+					
+				bot.send_message(chat_id=update.message.chat_id, text=concatExchanges(list_of_exchanges), disable_web_page_preview = True, parse_mode = 'Markdown', reply_to_message_id=update.message.message_id)
 				#for i in list_of_exchanges:
 					#bot.send_message(chat_id=update.message.chat_id, text=i, reply_to_message_id=update.message.message_id)
 		else:
 			print(args[0] + " not found!")
-			bot.send_message(chat_id=update.message.chat_id, text=args[0] + " cannot be found in DB, please check that you've entered a valid ticker.", reply_to_message_id=update.message.message_id)
+			bot.send_message(chat_id=update.message.chat_id, text=args[0] + " cannot be found in DB, please check that you've entered a valid ticker or run the updateDB command. Note that coinmarketcap is the data source i.e. your coin has to be listed on CMC before the bot can pull its data.", reply_to_message_id=update.message.message_id)
 
 # Command to update list of exchanges that trades this coin
 def updateWrapper(bot, update, args):
@@ -252,7 +253,7 @@ def updateWrapper(bot, update, args):
 			bot.send_message(chat_id=update.message.chat_id, text="Exchanges and 24h rolling trade volume for " + args[0] + " are updated!", reply_to_message_id=update.message.message_id)
 		else:
 			print(args[0] + " not found!")
-			bot.send_message(chat_id=update.message.chat_id, text=args[0] + " cannot be found in DB, please check that you've entered a valid ticker.", reply_to_message_id=update.message.message_id)
+			bot.send_message(chat_id=update.message.chat_id, text=args[0] + " cannot be found in DB, please check that you've entered a valid ticker or run the updateDB command. Note that coinmarketcap is the data source i.e. your coin has to be listed on CMC before the bot can pull its data.", reply_to_message_id=update.message.message_id)
 
 # Command to update all coins in cache
 def updateCacheWrapper(bot, update):

@@ -23,7 +23,7 @@ Goal: To determine which exchange you can buy a coin from.
 - [X] Determine how to handle coins with the same ticker, try KNC.
 
 #### Upcoming Features
-- [ ] Add description to my commands when typing /command in Telegram
+- [X] Add description to my commands when typing /command in Telegram
 - [X] Sorting exchanges by volume and what the trade volume is for that exchange
 - [ ] Determining the difference between the coins listed on 2 exchanges
 
