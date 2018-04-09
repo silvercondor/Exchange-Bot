@@ -22,7 +22,7 @@ def main():
 
 	# Creating the relevant command handlers
 	updateDB_handler = CommandHandler('updateDB', functions.updateDBWrapper)
-	exchange_handler = CommandHandler('exchange', functions.exchangeWrappe, pass_args=True)
+	exchange_handler = CommandHandler('exchange', functions.exchangeWrapper, pass_args=True)
 	
 	# Adding the handlers to the dispatcher
 	dispatcher.add_handler(updateDB_handler)
