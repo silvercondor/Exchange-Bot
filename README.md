@@ -17,7 +17,8 @@ Goal: To determine which exchange you can buy a coin from.
 - When the exchange command is run for a coin for the first time, the code will scrape off CoinMarketCap via BeautifulSoup and Requests. This means 2 things:
   1. If CMC's website structure changes, the code will break.
   2. If the list of exchanges is updated, the cached results will need to be updated.
-- To update the cached results, run the updateExchange command.
+
+- The caching functionality has been removed as I noticed that users are always forgetting to update (not sure if it is intentional or accidental). To reinstate caching functionality, please (un)comment the appropriate lines. ~~To update the cached results, run the updateExchange command.~~
 
 #### Issues to be fixed
 - [X] Determine how to handle coins with the same ticker, try KNC.

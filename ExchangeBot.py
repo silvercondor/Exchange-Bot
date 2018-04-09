@@ -22,22 +22,24 @@ def main():
 
 	# Creating the relevant command handlers
 	updateDB_handler = CommandHandler('updateDB', functions.updateDBWrapper)
-	exchange_handler = CommandHandler('exchange', functions.exchangeWrapper, pass_args=True)
-	update_handler = CommandHandler('update', functions.updateWrapper, pass_args=True)
-	updateCache_handler = CommandHandler('updateCache', functions.updateCacheWrapper)
-	# unknown_handler = MessageHandler(Filters.command, functions.unknownWrapper)
+	exchange_handler = CommandHandler('exchange', functions.exchangeWrappe, pass_args=True)
 	
 	# Adding the handlers to the dispatcher
 	dispatcher.add_handler(updateDB_handler)
 	dispatcher.add_handler(exchange_handler)
-	dispatcher.add_handler(update_handler)
-	dispatcher.add_handler(updateCache_handler)
+	
+	# Disabled the following handlers to remove cache. Uncomment to reinstate caching functionality. 
+
+	# update_handler = CommandHandler('update', functions.updateWrapper, pass_args=True)
+	# updateCache_handler = CommandHandler('updateCache', functions.updateCacheWrapper)
+	# unknown_handler = MessageHandler(Filters.command, functions.unknownWrapper)
+	# dispatcher.add_handler(update_handler)
+	# dispatcher.add_handler(updateCache_handler)
 	# dispatcher.add_handler(unknown_handler)
 
 	# WIP functions  
 	# analyse_handler = CommandHandler('analyse', functions.analyseWrapper, pass_args=True)
 	# dispatcher.add_handler(analyse_handler)
-
 
 	# Start the bot
 	print('starting bot!')

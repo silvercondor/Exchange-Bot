@@ -95,16 +95,22 @@ def updateCoin(coin, coin_to_exchanges):
 
 		# Sort exchanges based on total volume
 		exchanges = sorted(exchanges.items(), key = lambda x:x[1][0], reverse = True)
-		coin_to_exchanges[coin] = exchanges
+		
 		print(coin + " updated!")
+
+		# If you're using the cache version, uncomment the line below and comment the one after, vice versa.
+		# coin_to_exchanges[coin] = exchanges
+		return exchanges
+
 	else:
 		print("Error updating " + coin + "!")
+		return false
 
 
 # Function to get list of exchanges for the given coin
-def getExchange(coin, coin_to_exchanges):
-	
-	# If coin_to_exchanges doesn't contain coin, add it in. 
+def getExchangeWithCache(coin, coin_to_exchanges):
+
+	# If the coin_to_exchanges cache doesn't contain coin, add it in. 
 	if(not checkCoin(coin,coin_to_exchanges)):
 		print("Processing exchange data for " + coin)
 		updateCoin(coin, coin_to_exchanges)
@@ -115,6 +121,16 @@ def getExchange(coin, coin_to_exchanges):
 			return False
 	else:
 		return coin_to_exchanges[coin]
+
+# Function to get list of exchanges for the given coin
+def getExchangeNoCache(coin):
+	
+	try:
+		return updateCoin(coin, None)
+	except Exception as e:
+		print(e)
+		return False
+
 
 # Function to concatenate a list of exchanges into multiple strings max character length of 4096
 def concatExchanges(exchanges):
@@ -214,7 +230,11 @@ def exchangeWrapper(bot, update, args):
 		coin = args[0].upper()
 		if(coin in database):
 			id = database[coin].get('id')
-			exchanges = getExchange(id, coin_to_exchanges)
+
+			# If you're using the cache version, uncomment the line below and comment the one after, vice versa.
+			# exchanges = getExchangeWithCache(id, coin_to_exchanges)
+			exchanges = getExchangeNoCache(id)
+
 			if(exchanges):
 				print("Printing exchanges...")
 
