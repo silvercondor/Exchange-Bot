@@ -23,8 +23,6 @@ def updateDB(database):
 		try: 
 			database[ticker]
 		except KeyError:
-			pass
-		else:
 			database[ticker] = i
 			
 	print("Update complete!")
@@ -73,7 +71,7 @@ def updateCoin(coin, coin_to_exchanges):
 	soup = getSource('exchange', coin)
 
 	# Process source code to get unique list of exchanges for coin
-	if not soup:
+	if soup:
 		body = list(soup.find('table', id='markets-table').children)[3]
 		i = 1
 		rows = list(body.children)
@@ -88,16 +86,15 @@ def updateCoin(coin, coin_to_exchanges):
 			vol = int(re.sub("[^\d\.]", "", (list(list(rows[i])[7].children)[1]).get_text()))
 			
 			# Checks to see if the dictionary already contains this exchange
-			if exchange not in exchanges:
-				
+			try:
+				exchanges[exchange]
+			except KeyError:
 				# Retrieve URL for pairing with highest volume
 				url = list(list(rows[i])[5].children)[0]['href']
 				exchanges[exchange] = (vol, url)
-
 			else:
 				vol = exchanges[exchange][0] + vol
 				url = exchanges[exchange][1]
-
 				exchanges[exchange] = (vol, url)
 
 			i = i + 2
@@ -113,7 +110,7 @@ def updateCoin(coin, coin_to_exchanges):
 
 	else:
 		print("Error updating " + coin + "!")
-		return false
+		return False
 
 
 # Function to get list of exchanges for the given coin
@@ -132,16 +129,7 @@ def getExchangeWithCache(coin, coin_to_exchanges):
 
 # Function to get list of exchanges for the given coin
 def getExchangeNoCache(coin):
-	
-	try:
-		return updateCoin(coin, None)
-
-	# Why are you wrapping this in a try except and not wrapping
-	# other instances of updateCoin? 
-	except Exception as e:
-		print(e)
-		return False
-
+	return updateCoin(coin, None)
 
 # Function to concatenate a list of exchanges into multiple strings max character length of 4096
 def concatExchanges(exchanges):
