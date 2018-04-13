@@ -81,7 +81,9 @@ def updateCoin(coin, coin_to_exchanges):
 		# Using a dictionary to store exchanges
 		exchanges = dict()
 		while(i < len(rows)):
-			exchange = (list(list(rows[i])[3].children)[0]).get_text()
+
+			exchange = (list(list(rows[i])[3].children)[1]).get_text()
+			print(exchange)
 
 			# Remove $ and commas for volume and convert to int
 			vol = int(re.sub("[^\d\.]", "", (list(list(rows[i])[7].children)[1]).get_text()))
@@ -108,7 +110,7 @@ def updateCoin(coin, coin_to_exchanges):
 
 		# If you're using the cache version, uncomment the line below and comment the one after, vice versa.
 		# coin_to_exchanges[coin] = exchanges
-		return exchanges
+		# return exchanges
 
 	else:
 		print("Error updating " + coin + "!")
