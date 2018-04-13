@@ -20,26 +20,32 @@ def updateDB(database):
 	# Convert list of dict into dict of dict
 	for i in response:
 		ticker = i.get('symbol')
-		if(ticker not in database):
+		try: 
+			database[ticker]
+		except KeyError:
 			database[ticker] = i
+			
 	print("Update complete!")
 
 # Function to check if coin exists in coin_to_exchanges dictionary
 def checkCoin(coin, coin_to_exchanges):
-	if(coin in coin_to_exchanges):
+	try:
+		coin_to_exchanges[coin]
+	except KeyError:
+		print(coin + " not found!")
+		return False
+	else:
 		print(coin + " found!")
 		return True
-	print(coin + " not found!")
-	return False
 
 # Function to get html source code for coin
 def getSource(type, *args):
 	print("In getSource function")
-	if(type == 'exchange'):
+	if type == 'exchange' :
 
 		# URL for getting exchange details
 		url = 'https://coinmarketcap.com/currencies/' + args[0] + '/'
-	elif(type == 'history'):
+	elif type == 'history':
 
 		# Getting the date today and delta
 		today = datetime.datetime.now()
@@ -51,7 +57,7 @@ def getSource(type, *args):
 		return False
 
 	page = requests.get(url)
-	if(page.status_code == 404):
+	if page.status_code == 404:
 		print("Source code not found")
 		return False
 	else:
@@ -65,7 +71,7 @@ def updateCoin(coin, coin_to_exchanges):
 	soup = getSource('exchange', coin)
 
 	# Process source code to get unique list of exchanges for coin
-	if(soup != False):
+	if soup:
 		body = list(soup.find('table', id='markets-table').children)[3]
 		i = 1
 		rows = list(body.children)
@@ -73,22 +79,22 @@ def updateCoin(coin, coin_to_exchanges):
 		# Using a dictionary to store exchanges
 		exchanges = dict()
 		while(i < len(rows)):
-			exchange = (list(list(rows[i])[3].children)[0]).get_text()
+
+			exchange = (list(list(rows[i])[3].children)[1]).get_text()
 
 			# Remove $ and commas for volume and convert to int
 			vol = int(re.sub("[^\d\.]", "", (list(list(rows[i])[7].children)[1]).get_text()))
 			
 			# Checks to see if the dictionary already contains this exchange
-			if exchange not in exchanges:
-				
+			try:
+				exchanges[exchange]
+			except KeyError:
 				# Retrieve URL for pairing with highest volume
 				url = list(list(rows[i])[5].children)[0]['href']
 				exchanges[exchange] = (vol, url)
-
 			else:
 				vol = exchanges[exchange][0] + vol
 				url = exchanges[exchange][1]
-
 				exchanges[exchange] = (vol, url)
 
 			i = i + 2
@@ -104,33 +110,26 @@ def updateCoin(coin, coin_to_exchanges):
 
 	else:
 		print("Error updating " + coin + "!")
-		return false
+		return False
 
 
 # Function to get list of exchanges for the given coin
 def getExchangeWithCache(coin, coin_to_exchanges):
 
 	# If the coin_to_exchanges cache doesn't contain coin, add it in. 
-	if(not checkCoin(coin,coin_to_exchanges)):
+	if not checkCoin(coin,coin_to_exchanges):
 		print("Processing exchange data for " + coin)
 		updateCoin(coin, coin_to_exchanges)
 		try:
 			return coin_to_exchanges[coin]
-		except Exception as e:
-			print(e)
+		except KeyError:
 			return False
 	else:
 		return coin_to_exchanges[coin]
 
 # Function to get list of exchanges for the given coin
 def getExchangeNoCache(coin):
-	
-	try:
-		return updateCoin(coin, None)
-	except Exception as e:
-		print(e)
-		return False
-
+	return updateCoin(coin, None)
 
 # Function to concatenate a list of exchanges into multiple strings max character length of 4096
 def concatExchanges(exchanges):
@@ -163,7 +162,7 @@ def concatExchanges(exchanges):
 
 	# Keeping only the first n exchanges where n is >= 1 and < 16
 	# The first index is the column header
-	if(len(exchanges) > 16):
+	if len(exchanges) > 16:
 		exchanges = exchanges[:16]
 	return '\n'.join(exchanges)
 
@@ -174,7 +173,7 @@ def analyse(*args):
 	# Get source code
 	soup = getSource('history', args[0], args[1])
 	
-	if(soup != False):
+	if not soup:
 		body = list(soup.select('div#historical-data table.table')[0].children)[3]
 		rows = list(body.children)
 		i = len(rows) - 2
@@ -223,19 +222,25 @@ def updateDBWrapper(bot, update):
 # Command to find all exchanges that trades this coin
 def exchangeWrapper(bot, update, args):
 	print()
-	if(len(args) != 1):
+	if len(args) != 1:
 		bot.send_message(chat_id=update.message.chat_id, text='Too few / many arguments! Please enter only 1 ticker.', reply_to_message_id=update.message.message_id)
 	else:
 		# Getting the id equivalent (full name delimited with '-') of the target coin
 		coin = args[0].upper()
-		if(coin in database):
+		try:
+			database[coin]
+		except KeyError:
+			print(args[0] + " not found!")
+			bot.send_message(chat_id=update.message.chat_id, text=args[0] + " cannot be found in DB, please check that you've entered a valid ticker or run the updateDB command. Note that coinmarketcap is the data source i.e. your coin has to be listed on CMC before the bot can pull its data.", reply_to_message_id=update.message.message_id)
+		else:
+
 			id = database[coin].get('id')
 
 			# If you're using the cache version, uncomment the line below and comment the one after, vice versa.
 			# exchanges = getExchangeWithCache(id, coin_to_exchanges)
 			exchanges = getExchangeNoCache(id)
 
-			if(exchanges):
+			if exchanges:
 				print("Printing exchanges...")
 
 				# list_of_exchanges is a list of concatenated exchanges into strings with a maximum length of 4096 characters, see comments in the concatExchange Function as to why this isn't necessary for now.
@@ -250,19 +255,24 @@ def exchangeWrapper(bot, update, args):
 				bot.send_message(chat_id=update.message.chat_id, text=concatExchanges(list_of_exchanges), disable_web_page_preview = True, parse_mode = 'Markdown', reply_to_message_id=update.message.message_id)
 				#for i in list_of_exchanges:
 					#bot.send_message(chat_id=update.message.chat_id, text=i, reply_to_message_id=update.message.message_id)
-		else:
-			print(args[0] + " not found!")
-			bot.send_message(chat_id=update.message.chat_id, text=args[0] + " cannot be found in DB, please check that you've entered a valid ticker or run the updateDB command. Note that coinmarketcap is the data source i.e. your coin has to be listed on CMC before the bot can pull its data.", reply_to_message_id=update.message.message_id)
-
+		
+			
 # Command to update list of exchanges that trades this coin
 def updateWrapper(bot, update, args):
 	print()
-	if(len(args) != 1):
+	if len(args) != 1:
 		bot.send_message(chat_id=update.message.chat_id, text='Too few / many arguments! Please enter only 1 ticker.', reply_to_message_id=update.message.message_id)
 	else:
 		# Getting the id equivalent (full name delimited with '-') of the target coin
 		coin = args[0].upper()
-		if(coin in database):
+		try:
+			database[coin]
+
+		except KeyError:
+			print(args[0] + " not found!")
+			bot.send_message(chat_id=update.message.chat_id, text=args[0] + " cannot be found in DB, please check that you've entered a valid ticker or run the updateDB command. Note that coinmarketcap is the data source i.e. your coin has to be listed on CMC before the bot can pull its data.", reply_to_message_id=update.message.message_id)
+		else:
+
 			id = database[coin].get('id')
 
 			print("Updating exchange data for " + coin)
@@ -271,13 +281,10 @@ def updateWrapper(bot, update, args):
 			updateCoin(id, coin_to_exchanges)
 			
 			bot.send_message(chat_id=update.message.chat_id, text="Exchanges and 24h rolling trade volume for " + args[0] + " are updated!", reply_to_message_id=update.message.message_id)
-		else:
-			print(args[0] + " not found!")
-			bot.send_message(chat_id=update.message.chat_id, text=args[0] + " cannot be found in DB, please check that you've entered a valid ticker or run the updateDB command. Note that coinmarketcap is the data source i.e. your coin has to be listed on CMC before the bot can pull its data.", reply_to_message_id=update.message.message_id)
-
+		
 # Command to update all coins in cache
 def updateCacheWrapper(bot, update):
-	print()
+	
 	for coin in coin_to_exchanges:
 		updateCoin(coin, coin_to_exchanges)
 		
@@ -293,13 +300,13 @@ def unknownWrapper(bot, update):
 # Command to analyse if a coin is getting pumped
 def analyseWrapper(bot, update, args):
 	print()
-	if(len(args) != 2):
+	if len(args) != 2 :
 			bot.send_message(chat_id=update.message.chat_id, text='Too few / many arguments! Please enter 1 ticker followed by number of days e.g. /analyse CND 7', reply_to_message_id=update.message.message_id)
 	else:
 		# Getting the id equivalent (full name delimited with '-') of the target coin
 		coin = args[0].upper()
 		day = round(float(args[1]))
-		if(coin in database and day > 0): 
+		if (coin in database) and day > 0: 
 			id = database[coin].get('id')
 			accumulationFactor = analyse(id, day)
 			bot.send_message(chat_id=update.message.chat_id, text=accumulationFactor, reply_to_message_id=update.message.message_id)
